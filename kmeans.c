@@ -4,123 +4,60 @@
 #include <stdlib.h>
 #include <assert.h>
 
+typedef struct list ELEMENT;
+typedef ELEMENT *LINK;
+typedef double *datapoint; 
+/* LINK is a pointer to ELEMENT */
+/* datapoint is a pointer to a double array */
 
-void kMeans(int k,const char filename, int max_iter);
-void inizializeCentroid(int k,FILE *ifp, double *cents);
+void kMeans(int k, int max_iter);
+void inizializeCentroids(int k, LINK head, double **cents);
 int inizializeDataPoints(FILE *ifp);
 void calcClosestCluster(double x_i,double cents);
-LINK fileTolistOfDataPoints(FILE *ifp,int d);
+double** fileToDataPoints(FILE *ifp,int d, int size);
+int findDimension(FILE *ifp);
 
-struct list{
+struct list{          /*this is an item in a list*/
     double *datapoint; 
     struct list *next;   
 };
 
-typedef struct list ELEMENT;
-typedef ELEMENT* LINK;
-
-int main(int argc, char *argv[]){
-    //check validity of inputs- if not "Invalid Input!"
-    
-    int K=argv[1];
-    char *inputFilename=argv[2];
-    char *outputFilename=argv[3];
-    int max_iter=200; 
-    if (argc==5){
-        max_iter=argv[5];
+double ** fileToDataPoints(FILE *ifp, int d, int size) {
+    double currentCoordinate;
+    double *vector = (double *)calloc(size*d, sizeof(double));
+    assert(vector != NULL);
+    printf("allocated big contiuous vector\n");
+    double **matrix = (double **)calloc(size, sizeof(double *)); 
+    assert(matrix != NULL);
+    printf("allocated pointer vector\n");
+    for (int i=0; i<size; i++) {
+        matrix[i] = vector + i*d;
     }
-    FILE *ifp=NULL;
-    FILE *outfile=NULL;
-    int N=200; //change later 
-    double centriods[K];
-    char *nameofInput;
-    char *nameofOutput;
-    
-    size_t lenIn = strlen(inputFilename);
-    size_t lenOut=strlen(outputFilename);
-    // strndup returns a pointer to an array that it created
-    nameofInput = strndup(inputFilename, lenIn >= 4 ? lenIn - 4 : 0);
-    nameofOutput = strndup(outputFilename, lenOut >= 4 ? lenOut - 4 : 0);
-
-    ifp=fopen(nameofInput, "r");
-    assert(ifp!=NULL);
-    outfile=fopen(nameofOutput,"w");
-    assert(outfile!=NULL);
-    return 0;
-}
-
-void kMeans(int K,const char filename, int max_iter){
-
-
-inizializeCentroid(K,ifp,centriods);
-double x_i=0; 
-for(int i=1 ; i<=N ; i++) {
-x_i = fscanf(); //need to read from file the double number 
-//calculate euclidian distances from each centriod
-//add x_i to the clossest cluster- i thought of creating list for the clusters, what do you think? 
-// how do we implement methods for the list? it in possible? 
-
-}
-fclose(ifp);
-}
-
-LINK fileTolistOfDataPoints(FILE *ifp ,int d){
-    /*  reading the file into list of dataPoints (each dataPoint is an array dynamicly alocated- of side d
-    d is the dimension of the given vectors int the input file*/
-    double currentCoordinate; 
-    LINK head = NULL, tail = NULL;
-    if (fscanf(ifp, "%lf %*[,] ", &currentCoordinate ) > 0){
-        head = ( ELEMENT* )malloc( sizeof( ELEMENT ) );
-        assert(head!=NULL);
-        /*creating the inner array */
-        double* vector = (double*)malloc(d*sizeof( double ));
-        for(int i=0;i<d;i++){
-            vector[i]=currentCoordinate;
-            fscanf(ifp, "%lf %*[,] ", &currentCoordinate );
+    printf("initialized pointers\n");
+    for (int i=0; i<size; i++){  
+        for(int j=0; j<d; j++){
+            fscanf(ifp, "%lf %*[,]", &currentCoordinate);
+            matrix[i][j] = currentCoordinate;
         }
-        head->datapoint = vector;
-        tail = head;
-        while (fscanf(ifp, "%lf %*[,] ", &currentCoordinate ) > 0){
-            tail->next= ( ELEMENT* )malloc( sizeof( ELEMENT ) );
-            tail = tail->next;
-            assert(tail!=NULL);
-            tail->datapoint = vector;
-            double* vector = (double*)malloc(d*sizeof( double ));
-            for(int i=0;i<d;i++){
-                vector[i]=currentCoordinate;
-                fscanf(ifp, "%lf %*[,] ", &currentCoordinate );
-            }
-            tail ->next=NULL;
-        }
-        
     }
-    return head;
+    printf("method finished\n");
+    return matrix;
+    }
 
-}
-
-void inizializeCentroid(int K,FILE *ifp, double *cents){
-
-for( int i=0;i<K;i++){
-    fscanf(ifp,"%e",&cents[i]);
-}
-}
-
-
-int inizializeDataPoints(FILE *ifp){
-    // read first line first then rewind 
-    char c = fgetc(ifp);
+int findDimension(FILE *ifp) {
+    char c;
     int commacnt=0;
     int dim=0;
-    do
-    {
+    do {
+        c = fgetc(ifp);
         // Taking input single character at a time
         if( feof(ifp) ){
             return -1; 
         }
 
-        if (c ==10) // c==\n 
+        if (c == 10) // c==\n 
             {
-                dim=commacnt+1;
+                dim = commacnt+1;
                 break;
             }
         else if (c==44){
@@ -132,15 +69,138 @@ int inizializeDataPoints(FILE *ifp){
         } while(1); 
     
     rewind(ifp);
-    double vector;
-    while (fscanf(ifp, "%lf %*[,] ", &vector ) > 0){
+    return dim;
+}
 
+int findInputSize(FILE *ifp) {
+    char c;
+    int cnt;
+    do {
+        c = fgetc(ifp);
+        /*printf("%c",c)*/;
+        // Taking input single character at a time
+        if( feof(ifp) ){
+            break; 
+        }
+
+        if (c == 10) // c==\n 
+            {
+                cnt++;
+            }
+        } while(1); 
+    
+    rewind(ifp);
+    return cnt;
+}
+
+void inizializeCentroids(int k, LINK head, double **cents){
+        /*if there are less vectoer in the input than k than print "invalid input" and terminate*/
+        LINK current = head;
+        int d = sizeof(head->datapoint)/sizeof((head->datapoint)[0]);   
+        for(int i=0; i<k; i++){
+            double *vector = cents[i];
+            for (int j=0; j<d; j++) { 
+                vector[j]=current->datapoint[j];
+            }
+            current = current->next;        
+        }
+}
+
+void kMeans(int k, int max_iter){
+    int iter = 0;
+    int continue_condition = 1;
+    while (iter<max_iter && continue_condition){
+        /*
+        1) for each item in the input list
+            2) for each centroid
+                3) calculate distance 
+                4) update minimum distance and cluster _i_ from which the distance is minimal
+            5) add item to the list in cluster _i_
+
+        6) update centroids + empty cluster lists and free the space
+        7) update iter
+        8) update continue_codition
+        */
     }
+}
+
+/*void assignToClusters(LINK head, double **cents,LINK **clusters, int K) {
+    int distance;
+    int tempDist;
+    int clusterIndex;
+    /*
+        1) for each item in the input list
+            2) for each centroid
+                3) calculate distance 
+                4) update minimum distance and cluster _i_ from which the distance is minimal
+            5) add item to the list in cluster _i_
+        */
+/*    LINK current = head;
+    while (current != NULL) {
+        for (int i=0; i<K; i++){
+            tempDist = calculteDistance(current->datapoint,cents[i]);
+            if (tempDist<distance) {
+                distance = tempDist;
+                clusterIndex = i;
+            }
+        }
+        clusters[clusterIndex]->next = current;
+        current = current->next;
+    }
+}
+*/
+
+int calculateDistance(double *datapoint, double *centroid, int d){
+    int distance = 0;
+    for (int i = 0; i<d; i++){
+        distance+= pow(datapoint[i]-centroid[i],2);
+    }
+}
+
+int main(int argc, char *argv[]){
+    //check validity of inputs- if not "Invalid Input!"
+    /*IMPORTANT! - we need to make sure that the input is read corrrectly*/
+    int K = atoi(argv[1]);
+    printf("K=%d\n",K);
+    char *inputFilename=argv[2];
+    char *outputFilename=argv[3];
+    int max_iter = 200; 
+    
+    if (argc==5){
+        max_iter = atoi(argv[4]);
+    }
+    printf("max_iter=%d\n",max_iter);
+    FILE *ifp=NULL;
+    FILE *outfile=NULL;
+    int N=200; //change later 
+
+    ifp = fopen(inputFilename, "r");
+    assert(ifp!=NULL);
+    printf("opened input file successfuly\n");
+    int d = findDimension(ifp);
+    printf("d = %d\n",d);
+    int size = findInputSize(ifp);
+    printf("size = %d\n",size);
+
+    double** datapointMatrix = fileToDataPoints(ifp, d, size);
+    /*printf("%lf",datapointMatrix[499][2])*/;
     fclose(ifp);
-   
-}
+    printf("closed input file successfully\n");
+    
+    double **centroids = (double **)calloc(K,sizeof(datapoint)); //this array holds K datapoints
+    assert(centroids != NULL);
+    LINK **clusters = (LINK **)calloc(K,sizeof(ELEMENT));
+    assert(clusters != NULL);
+    //inizializeCentroids(K, headOfList, centroids);
 
+    void kMeans(int K, int max_iter);
+    //double item = (*(centroids)[0])->datapoint[0];
+    printf("%d\n",centroids[0]);
+    printf("success!\n");
+    outfile = fopen(outputFilename,"w");
+    assert(outfile != NULL);
+    printf("opened outfile successfully\n");
+    fclose(outfile);
+    printf("closed outfile successfully\n");
+    return 0;
 }
-}
-
-
