@@ -35,17 +35,36 @@ struct list{          /*item in a list*/
     struct list *next;   
 };
 
-double ** fileToDataPoints(FILE *ifp ,int d, int size){
-    /*  reading the file into list of dataPoints (each dataPoint is an array dynamicly alocated- of side d
-    d is the dimension of the given vectors int the input file*/
+double ** fileToDataPoints(FILE *ifp, int d, int size){
     double currentCoordinate;
-    double **matrix = calloc(size, sizeof(double *)); 
-    double *datapoint = calloc(d, sizeof(double));
+    double **matrix = (double **)calloc(size, sizeof(double *)); 
+    assert(matrix!= NULL);
+    for (int i=0; i<size; i++){
+            double *vector = (double *)calloc(d, sizeof( double ));
+            assert(vector != NULL);
+        for(int j=0;j<d;j++){
+            fscanf(ifp, "%lf %*[,] ", &currentCoordinate );
+            vector[j]=currentCoordinate;
+        }
+        matrix[i] = vector;
+        }
+        return matrix;
+    }
+/*
+double ** fileToDataPoints(FILE *ifp ,int d, int size){
+    //reading the file into list of dataPoints (each dataPoint is an array dynamicly alocated- of side d
+    d is the dimension of the given vectors int the input file//
+    double currentCoordinate;
+    double **matrix = (double **)calloc(size, sizeof(double *)); 
+    assert(matrix!= NULL);
+    double *datapoint = (double *)calloc(d, sizeof(double));
+    assert(matrix!= NULL);
     if (fscanf(ifp, "%lf %*[,] ", &currentCoordinate ) > 0) {
-        head = ( ELEMENT* )malloc( sizeof( ELEMENT ) );
-        assert(head!=NULL);
-        /*creating the inner array */
-        double *vector = (double *)malloc(d*sizeof( double ));
+        head = (ELEMENT *) calloc(1, sizeof(ELEMENT) );
+        assert(head != NULL);
+        /creating the inner array //
+        double *vector = (double *)calloc(d, sizeof( double ));
+        assert(vector != NULL);
         vector[0]=currentCoordinate;
         for(int i=1;i<d;i++){
             vector[i]=currentCoordinate;
@@ -54,10 +73,11 @@ double ** fileToDataPoints(FILE *ifp ,int d, int size){
         head->datapoint = vector;
         tail = head;
         while (fscanf(ifp, "%lf %*[,] ", &currentCoordinate ) > 0){
-            tail->next= ( ELEMENT* )malloc( sizeof( ELEMENT ) );
+            tail->next= (ELEMENT *)calloc(1, sizeof( ELEMENT ) );
             tail = tail->next;
             assert(tail!=NULL);
-            double *vector = (double *)malloc(d*sizeof( double ));
+            double *vector = (double *)calloc(d, sizeof( double ));
+            assert(vector != NULL);
             vector[0]=currentCoordinate;
             for(int i=1;i<d;i++){
                 vector[i] = currentCoordinate;
@@ -69,7 +89,7 @@ double ** fileToDataPoints(FILE *ifp ,int d, int size){
     }
     return head;
 }
-
+*/
 int findDimension(FILE *ifp) {
     char c;
     int commacnt=0;
@@ -210,12 +230,15 @@ int main(int argc, char *argv[]){
     printf("size = %d\n",size);
 
     double** datapointMatrix = fileToDataPoints(ifp, d, size);
+    printf("%lf",datapointMatrix[499][2]);
     fclose(ifp);
     printf("closed input file successfully\n");
     
-    double **centroids = malloc(K*sizeof(datapoint)); //this array holds K datapoints
-    LINK **clusters = malloc( K*sizeof(ELEMENT));
-    inizializeCentroids(K, headOfList, centroids);
+    double **centroids = (double **)calloc(K,sizeof(datapoint)); //this array holds K datapoints
+    assert(centroids != NULL);
+    LINK **clusters = (LINK **)calloc(K,sizeof(ELEMENT));
+    assert(clusters != NULL);
+    //inizializeCentroids(K, headOfList, centroids);
 
     void kMeans(int K, int max_iter);
     //double item = (*(centroids)[0])->datapoint[0];
