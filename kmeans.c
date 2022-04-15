@@ -136,7 +136,6 @@ void restartClusters(LINK *clusters, int k) {
             free(current);
             current = next;
         }
-        printf("nullified  cluster %d/%d\n", i+1,k);
         clusters[i] = (ELEMENT*)malloc(sizeof(ELEMENT));
         assert(clusters[i] != NULL && "An Error Has Occurred");
         clusters[i]->datapoint = -1;
@@ -154,7 +153,9 @@ void delete_list(LINK head) {
 void kMeans(int k, int size, int d, int max_iter, double **cents, LINK *clusters, double **matrix){
     int iter = 0;
     int continue_condition = 1;
+    printf("Kmeans:\n");
     while (iter<max_iter && continue_condition){
+        printf("iteration #%d\n", iter+1);
         /*
         1) for each item in the input list
             2) for each centroid
@@ -165,13 +166,13 @@ void kMeans(int k, int size, int d, int max_iter, double **cents, LINK *clusters
         6) update centroids + empty cluster list and free the space
         7) update iter
         8) update continue_codition
-        */
-       printf("iteration #%d\nassigning datapoints to clusters", iter+1);
+        
+       printf("iteration #%d\nassigning datapoints to clusters\n", iter+1);*/
        assignToCluster(cents, matrix, clusters, k, size, d);
-       printf("updating centroids\n");
        continue_condition = updateCentroids(cents, clusters, matrix, k, d);
        iter++;
     }
+    printf("finished after %d iterations\n", iter);
 }
 
 void assignToCluster(double **cents,double** datapoints,LINK *clusters, int k, int size, int d) {
@@ -228,14 +229,12 @@ int updateCentroids(double **cents, LINK *clusters, double** inputMatrix ,int k,
             current = current->next;
             sizeOfCluster++;
         }
-        /*printf("cluster %d finised the while loop\n", i);*/
 
         for (m=0; m<d; m++){
             sum[m] /= sizeOfCluster;
         }
-        /*printf("cluster %d's new centroid is calculated\n", i);*/
+        printf("cluster %d's new centroid is calculated\n", i+1);
         difference += (calculateNorma(cents[i], sum, d) > epsilon)?1:0;
-        /*printf("difference is %d\n", difference);*/
         /*consider using memcpy(cents[i],sum, d*sizeof(double));*/
         printf("new centroid %d:(",i+1);
         for (s=0; s<d; s++) {
@@ -243,14 +242,13 @@ int updateCentroids(double **cents, LINK *clusters, double** inputMatrix ,int k,
             sum[s] = 0;
             printf("%f,",cents[i][s]);
         }
-        printf(")\n");
-        printf("\n*******updated centroid %d/%d*******\n", (i+1), d);
+        printf(")\n\n");
     }
+    /*printf("re-initializing clusters...\n");*/
     restartClusters(clusters, k);
-    printf("re-initialized clusters\n");
     free(sum);
-    printf("centroids have been updated\n");
-    /*printf("continue is %d\n",difference > 0);*/
+    /*printf("centroids update complete\n");
+    printf("continue is %d\n",difference > 0);*/
     return difference > 0;
 }
 
@@ -288,9 +286,10 @@ void writeToFile(double **cents, int k, int d, char * fileName){
     ofp = fopen(fileName,"w");
     assert(ofp != NULL && "Invalid Input!");
     for (i = 0; i<k; i++){
-        for (j=0; j<d; j++){
-             fprintf(ofp,"%.4f,",cents[i][j]);
+        for (j=0; j<d-1; j++){
+            fprintf(ofp,"%.4f,",cents[i][j]);
         }
+        fprintf(ofp,"%.4f",cents[i][j]);
         fprintf(ofp,"\n");
     }
     fclose(ofp);
@@ -360,8 +359,6 @@ int main(int argc, char *argv[]){
     printf("Calculating clusters\n");
     restartClusters(clusters, k);
     kMeans(k, size, d, max_iter, centroids, clusters, datapointMatrix);
-    printf("Successfully ran kMeans\n");
-    printf("First index of the first centroid is %f\n",centroids[0][0]);
     printf("Opening output file\n");
     printf("Writing to output file...\n");
     writeToFile(centroids, k, d, outputFileName);
