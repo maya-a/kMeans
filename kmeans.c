@@ -29,7 +29,7 @@ void writeToFile(double **cents, int k, int d, char * file_name);
 void validityCheck1(int argc, char *argv[]);
 void validityCheck2(int k, int max_iter, int size);
 
-struct list { /*this is an item in a list*/
+struct list { 
     int datapoint; 
     struct list *next;   
 };
@@ -110,7 +110,6 @@ int findInputSize(FILE *ifp) {
 }
 
 double ** inizializeCentroids(int k, int d, double **datapoints){
-    /*if there are less vectors in the input than k than print "invalid input" and terminate*/
     double *centroid = NULL;
     double **matrix = NULL;
     int i,j;
@@ -122,7 +121,6 @@ double ** inizializeCentroids(int k, int d, double **datapoints){
         matrix[i] = centroid + i*d;
     }
     for (i=0; i<k; i++){
-        /*consider using memcpy(matrix[i], datapoints[i], (d+1)* sizeof(double));*/
         for (j=0; j<d; j++){
             matrix[i][j] = datapoints[i][j]; 
         }
@@ -153,26 +151,12 @@ void delete_list(LINK head) {
 void kMeans(int k, int size, int d, int max_iter, double **cents, LINK *clusters, double **matrix){
     int iter = 0;
     int continue_condition = 1;
-    printf("Kmeans:\n");
     while (iter<max_iter && continue_condition){
-        printf("iteration #%d\n", iter+1);
-        /*
-        1) for each item in the input list
-            2) for each centroid
-                3) calculate distance 
-                4) update minimum distance and cluster _i_ from which the distance is minimal
-            5) add item to the list in cluster _i_
-
-        6) update centroids + empty cluster list and free the space
-        7) update iter
-        8) update continue_codition
-        
-       printf("iteration #%d\nassigning datapoints to clusters\n", iter+1);*/
+    
        assignToCluster(cents, matrix, clusters, k, size, d);
        continue_condition = updateCentroids(cents, clusters, matrix, k, d);
        iter++;
     }
-    printf("finished after %d iterations\n", iter);
 }
 
 void assignToCluster(double **cents,double** datapoints,LINK *clusters, int k, int size, int d) {
@@ -180,13 +164,7 @@ void assignToCluster(double **cents,double** datapoints,LINK *clusters, int k, i
     double tempDist = 0;
     int clusterIndex, i, j;
     LINK current, new;
-    /*
-        1) for each item in the input list
-            2) for each centroid
-                3) calculate distance 
-                4) update minimum distance and cluster _i_ from which the distance is minimal
-            5) add item to the list in cluster _i_
-        */  
+ 
     for(i=0; i<size; i++) {
         clusterIndex = -1;
         distance = DBL_MAX;
@@ -197,7 +175,6 @@ void assignToCluster(double **cents,double** datapoints,LINK *clusters, int k, i
                 clusterIndex = j;
             }
         }
-        /*printf("\nx%d is closest to centroid %d\n\n",i, clusterIndex);*/
         if (clusters[clusterIndex]->datapoint == -1) {
             clusters[clusterIndex]->datapoint = i;
         }else {
@@ -221,14 +198,11 @@ int updateCentroids(double **cents, LINK *clusters, double** inputMatrix ,int k,
     for (i=0; i<k; i++) {
         current = clusters[i];
         sizeOfCluster = 0;
-        printf("cluster #%d\n",i+1);
         while (current != NULL && current->datapoint != -1){
-            printf("%d:(",current->datapoint);
             for  (j=0; j<d; j++) {
-                printf("%f",inputMatrix[current->datapoint][j]);
                 sum[j] += inputMatrix[current->datapoint][j];
             }
-            printf(")\n");
+
             current = current->next;
             sizeOfCluster++;
         }
@@ -239,22 +213,14 @@ int updateCentroids(double **cents, LINK *clusters, double** inputMatrix ,int k,
         for (m=0; m<d; m++){
             sum[m] /= sizeOfCluster;
         }
-        printf("cluster %d's new centroid is calculated\n", i+1);
         difference += (calculateNorma(cents[i], sum, d) > epsilon)?1:0;
-        /*consider using memcpy(cents[i],sum, d*sizeof(double));*/
-        printf("new centroid %d:(",i+1);
         for (s=0; s<d; s++) {
             cents[i][s] = sum[s];
             sum[s] = 0;
-            printf("%f,",cents[i][s]);
         }
-        printf(")\n\n");
     }
-    /*printf("re-initializing clusters...\n");*/
     restartClusters(clusters, k);
     free(sum);
-    /*printf("centroids update complete\n");
-    printf("continue is %d\n",difference > 0);*/
     return difference > 0;
 }
 
@@ -299,7 +265,6 @@ void writeToFile(double **cents, int k, int d, char * fileName){
         fprintf(ofp,"\n");
     }
     fclose(ofp);
-    printf("Closing output file\n");
 }
 
 void validityCheck1(int argc, char *argv[]){
@@ -320,15 +285,15 @@ void validityCheck2(int k, int max_iter, int size){
 }
 
 int main(int argc, char *argv[]){
-    /*check validity of inputs- if not "Invalid Input!"*/
-    /*IMPORTANT! - we need to make sure that the input is read corrrectly*/
     int i ,d, size, k, max_iter = 200;
     char *inputFileName = NULL;
     char *outputFileName = NULL;
     FILE *ifp=NULL;
     double **datapointMatrix, **centroids;
     LINK *clusters;
+    
     validityCheck1(argc,argv);
+    
     k = atoi(argv[1]);
 
     if (argc==5){
@@ -340,40 +305,29 @@ int main(int argc, char *argv[]){
         inputFileName=argv[2];
         outputFileName=argv[3];
     }
-    /*else {
-        assert(!"Invalid Input!");
-    }*/
-    /*k=15;
-    inputFileName="C:\\Users\\Gal\\C\\assignment1\\input_3.txt";
-    outputFileName="C:\\Users\\Gal\\C\\assignment1\\test_output.txt";*/
-    printf("k=%d, max_iter=%d\n\n",k, max_iter);
+    
     ifp = fopen(inputFileName, "r");
     assert(ifp != NULL && "Invalid Input!");
-    printf("Analizing input file...\n");
     d = findDimension(ifp);
     size = findInputSize(ifp);
     validityCheck2(k, max_iter, size);
-    printf("Converting the input file into a %dx%d matrix\n",size,d);
     datapointMatrix = fileToDataPoints(ifp, d, size);
-    printf("Closing input file\n");
     fclose(ifp);
     
-    printf("Inititializing centroids\n");
     centroids = inizializeCentroids(k, d, datapointMatrix); /*this array holds K datapoints*/
     clusters = (LINK *)calloc(k, sizeof(LINK));
     assert(clusters != NULL && "An Error Has Occurred");
-    printf("Calculating clusters\n");
     restartClusters(clusters, k);
     kMeans(k, size, d, max_iter, centroids, clusters, datapointMatrix);
-    printf("Opening output file\n");
-    printf("Writing to output file...\n");
     writeToFile(centroids, k, d, outputFileName);
+    for (i = 0; i<size; k++){
+        free(datapointMatrix[i]);
+    }
     free(datapointMatrix);
     for (i = 0; i<k; k++){
         free(centroids[i]);
     }
     free(centroids);
     free(clusters);
-    printf("Done!\n");
     return 0;
 }
