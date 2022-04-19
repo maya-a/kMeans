@@ -12,6 +12,7 @@ typedef double *datapoint;
 /* LINK is a pointer to ELEMENT */
 /* datapoint is a pointer to a double array */
 
+void anErrorHasOccurred();
 double** fileToDataPoints(FILE *ifp,int d, int size);
 int findDimension(FILE *ifp);
 int findInputSize(FILE *ifp);
@@ -32,6 +33,10 @@ struct list { /*this is an item in a list*/
     int datapoint; 
     struct list *next;   
 };
+
+void anErrorHasOccurred(){
+    assert(0 && "An Error Has Occurred");
+}
 
 double ** fileToDataPoints(FILE *ifp, int d, int size) {
     double currentCoordinate;
@@ -182,7 +187,8 @@ void assignToCluster(double **cents,double** datapoints,LINK *clusters, int k, i
                 4) update minimum distance and cluster _i_ from which the distance is minimal
             5) add item to the list in cluster _i_
         */  
-    for(i=0; i<size; i++){
+    for(i=0; i<size; i++) {
+        clusterIndex = -1;
         distance = DBL_MAX;
         for (j=0; j<k; j++){
             tempDist = calculateDistance(datapoints[i], cents[j], d);
@@ -192,7 +198,7 @@ void assignToCluster(double **cents,double** datapoints,LINK *clusters, int k, i
             }
         }
         /*printf("\nx%d is closest to centroid %d\n\n",i, clusterIndex);*/
-        if (clusters[clusterIndex]->datapoint == -1){
+        if (clusters[clusterIndex]->datapoint == -1) {
             clusters[clusterIndex]->datapoint = i;
         }else {
             current = clusters[clusterIndex];
@@ -215,15 +221,19 @@ int updateCentroids(double **cents, LINK *clusters, double** inputMatrix ,int k,
     for (i=0; i<k; i++) {
         current = clusters[i];
         sizeOfCluster = 0;
+        printf("cluster #%d\n",i+1);
         while (current != NULL && current->datapoint != -1){
-            /*printf("currently on datapoint %d\n",current->datapoint);*/
+            printf("%d:(",current->datapoint);
             for  (j=0; j<d; j++) {
+                printf("%f",inputMatrix[current->datapoint][j]);
                 sum[j] += inputMatrix[current->datapoint][j];
-                /*printf("%f",sum[j]);*/
             }
-            /*printf("\n");*/
+            printf(")\n");
             current = current->next;
             sizeOfCluster++;
+        }
+        if (sizeOfCluster == 0){
+            anErrorHasOccurred();
         }
 
         for (m=0; m<d; m++){
@@ -299,9 +309,6 @@ void validityCheck1(int argc, char *argv[]){
         printf("Invalid Input!");
         exit(1);
         }
-    else{
-        
-    }
 }
 void validityCheck2(int k, int max_iter, int size){
     if (k == 0 ||
@@ -315,7 +322,7 @@ void validityCheck2(int k, int max_iter, int size){
 int main(int argc, char *argv[]){
     /*check validity of inputs- if not "Invalid Input!"*/
     /*IMPORTANT! - we need to make sure that the input is read corrrectly*/
-    int d, size, k, max_iter = 200;
+    int i ,d, size, k, max_iter = 200;
     char *inputFileName = NULL;
     char *outputFileName = NULL;
     FILE *ifp=NULL;
@@ -362,6 +369,9 @@ int main(int argc, char *argv[]){
     printf("Writing to output file...\n");
     writeToFile(centroids, k, d, outputFileName);
     free(datapointMatrix);
+    for (i = 0; i<k; k++){
+        free(centroids[i]);
+    }
     free(centroids);
     free(clusters);
     printf("Done!\n");
