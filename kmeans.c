@@ -127,15 +127,10 @@ double ** inizializeCentroids(int k, int d, double **datapoints){
 
 void restartClusters(LINK *clusters, int k) {
     int i;
-    LINK current, next;
+    LINK current;
     for (i=0; i<k; i++) {
         current = clusters[i];
-        /*delete_list(current);*/
-        while (current != NULL) {
-            next = current->next;
-            free(current);
-            current = next;
-        }
+        delete_list(current);
         clusters[i] = (ELEMENT*)malloc(sizeof(ELEMENT));
         assert(clusters[i] != NULL && "An Error Has Occurred");
         clusters[i]->datapoint = -1;
@@ -211,7 +206,7 @@ void assignToCluster(double **cents,double** datapoints,LINK *clusters, int k, i
 }
 
 int updateCentroids(double **cents, LINK *clusters, double** inputMatrix ,int k, int d) {
-    int i, j, m, s, difference = 0, sizeOfCluster = 0;
+    int i, j, m, s, difference = 0, sizeOfCluster;
     double epsilon = 0.001;
     LINK current = NULL;
     double *sum = (double *)calloc(d, sizeof(double));
@@ -219,6 +214,7 @@ int updateCentroids(double **cents, LINK *clusters, double** inputMatrix ,int k,
 
     for (i=0; i<k; i++) {
         current = clusters[i];
+        sizeOfCluster = 0;
         while (current != NULL && current->datapoint != -1){
             /*printf("currently on datapoint %d\n",current->datapoint);*/
             for  (j=0; j<d; j++) {
@@ -340,6 +336,9 @@ int main(int argc, char *argv[]){
     /*else {
         assert(!"Invalid Input!");
     }*/
+    /*k=15;
+    inputFileName="C:\\Users\\Gal\\C\\assignment1\\input_3.txt";
+    outputFileName="C:\\Users\\Gal\\C\\assignment1\\test_output.txt";*/
     printf("k=%d, max_iter=%d\n\n",k, max_iter);
     ifp = fopen(inputFileName, "r");
     assert(ifp != NULL && "Invalid Input!");
