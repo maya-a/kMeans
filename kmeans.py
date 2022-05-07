@@ -4,24 +4,18 @@ import math
 def an_error_has_occurred():
     sys.exit("An Error Has Occurred")
 
+def files_to_dataframe(file_name_1,file_name_2):
+    file1 = pd.read_csv(file_name_1)
+    size1=file1.shape[1]
+    file2 = pd.read_csv(file_name_1)
+    size = [str(i) for i in range(file1.shape[1])]
+    file1 = pd.read_csv(file_name_1, names=size)
+    size = [str(i+size1-1) for i in range(file2.shape[1])]
+    size[0] = str(0)
+    file2 = pd.read_csv(file_name_2, names=size)
 
-def file_to_matrix(input_file):
-    input_mat = []
-    try: 
-        f = open(input_file, "r")
-        for line in f:
-            currentline = line.split(",")
-            last = currentline[-1][:-1]
-            currentline = currentline[:-1]
-            currentline.append(last)
-            currentline = [float(i) for i in currentline]
-            input_mat.append(currentline)
-        f.close() 
-        return input_mat   
-
-    except IOError:
-        an_error_has_occurred() 
-
+    data = pd.merge(file1, file2, on ='0')
+    data=data.drop(['0'],axis=1)
 def create_centroids(k, input_mat):
     centroids=[]
     centroids=[input_mat[i] for i in range(k)]
@@ -113,30 +107,32 @@ def check_is_natural(num):
 
 
 def main(): 
-    input_file=None
-    output_file=None
-    check_is_natural(sys.argv[1])
-    k=int(sys.argv[1])
-    max_iter=200
-    if(len(sys.argv)==4):
-        input_file=sys.argv[2]
-        output_file=sys.argv[3]
-        
-    elif (len(sys.argv)==5):
-        check_is_natural(sys.argv[2])
-        max_iter=int(sys.argv[2])
-        input_file=sys.argv[3]
-        output_file=sys.argv[4]
-    else: 
-        invalid_input()
-   
-    #Reading from file
-    data_point_matrix=file_to_matrix(input_file)
-    if(k > len(data_point_matrix)):
-        invalid_input()
-    centroids=kmeans(data_point_matrix,k, max_iter)
-    write_to_file(output_file,centroids)
+    try:
+        input_file=None
+        output_file=None
+        check_is_natural(sys.argv[1])
+        k=int(sys.argv[1])
+        max_iter=200
+        if(len(sys.argv)==4):
+            input_file=sys.argv[2]
+            output_file=sys.argv[3]
+            
+        elif (len(sys.argv)==5):
+            check_is_natural(sys.argv[2])
+            max_iter=int(sys.argv[2])
+            input_file=sys.argv[3]
+            output_file=sys.argv[4]
+        else: 
+            invalid_input()
     
-
+        #Reading from file
+        data_point_matrix=file_to_matrix(input_file)
+        if(k > len(data_point_matrix)):
+            invalid_input()
+        centroids=kmeans(data_point_matrix,k, max_iter)
+        write_to_file(output_file,centroids)
+    except Exception as e:
+        print("An Error Has Occurred")
+        exit()
 
 main()

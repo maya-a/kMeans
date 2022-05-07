@@ -2,7 +2,6 @@
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <float.h>
 #include <ctype.h>
 
@@ -13,6 +12,7 @@ typedef double *datapoint;
 /* datapoint is a pointer to a double array */
 
 void anErrorHasOccurred();
+void invalidInput();
 double** fileToDataPoints(FILE *ifp,int d, int size);
 int findDimension(FILE *ifp);
 int findInputSize(FILE *ifp);
@@ -35,7 +35,13 @@ struct list {
 };
 
 void anErrorHasOccurred(){
-    assert(0 && "An Error Has Occurred");
+    printf("An Error Has Occurred");
+    exit(1);
+}
+
+void invalidInput(){
+    printf("Invalid Input!");
+    exit(1);
 }
 
 double ** fileToDataPoints(FILE *ifp, int d, int size) {
@@ -45,9 +51,13 @@ double ** fileToDataPoints(FILE *ifp, int d, int size) {
     int i, j;
     
     vector = (double *)calloc(size*d, sizeof(double));
-    assert(vector != NULL && "An Error Has Occurred");
+    if (vector == NULL){
+        anErrorHasOccurred();
+    }
     matrix = (double **)calloc(size, sizeof(double *)); 
-    assert(matrix != NULL && "An Error Has Occurred");
+    if (matrix == NULL){
+        anErrorHasOccurred();
+    }
     for (i=0; i<size; i++) {
         matrix[i] = vector + i*d;
     }
@@ -93,7 +103,6 @@ int findInputSize(FILE *ifp) {
     int cnt = 0;
     do {
         c = fgetc(ifp);
-        /*printf("%c",c)*/;
         /* Taking input single character at a time*/
         if( feof(ifp) ){
             break; 
@@ -114,9 +123,13 @@ double ** inizializeCentroids(int k, int d, double **datapoints){
     double **matrix = NULL;
     int i,j;
     centroid = (double *)calloc(k*d, sizeof(double));
-    assert(centroid != NULL && "An Error Has Occurred");
+    if (centroid == NULL){
+        anErrorHasOccurred();
+    }
     matrix = (double **)calloc(k, sizeof(double *)); 
-    assert(matrix != NULL && "An Error Has Occurred");
+    if (matrix == NULL){
+        anErrorHasOccurred();
+    }
     for (i=0; i<k; i++) {
         matrix[i] = centroid + i*d;
     }
@@ -135,7 +148,9 @@ void restartClusters(LINK *clusters, int k) {
         current = clusters[i];
         delete_list(current);
         clusters[i] = (ELEMENT*)malloc(sizeof(ELEMENT));
-        assert(clusters[i] != NULL && "An Error Has Occurred");
+        if (clusters[i] == NULL){
+            anErrorHasOccurred();
+        }
         clusters[i]->datapoint = -1;
         clusters[i]->next = NULL;
     }
@@ -180,7 +195,9 @@ void assignToCluster(double **cents,double** datapoints,LINK *clusters, int k, i
         }else {
             current = clusters[clusterIndex];
             new = (ELEMENT*)malloc( sizeof(ELEMENT));
-            assert(new !=NULL && "An Error Has Occurred");
+            if (new == NULL){
+                anErrorHasOccurred();
+            }
             new -> datapoint = i;
             new -> next = current;
             clusters[clusterIndex] = new;
@@ -193,8 +210,9 @@ int updateCentroids(double **cents, LINK *clusters, double** inputMatrix ,int k,
     double epsilon = 0.001;
     LINK current = NULL;
     double *sum = (double *)calloc(d, sizeof(double));
-    assert(sum != NULL && "An Error Has Occurred");
-
+    if (sum == NULL){
+        anErrorHasOccurred();
+    }
     for (i=0; i<k; i++) {
         current = clusters[i];
         sizeOfCluster = 0;
@@ -256,7 +274,9 @@ void writeToFile(double **cents, int k, int d, char * fileName){
     int i,j;
     FILE *ofp = NULL;
     ofp = fopen(fileName,"w");
-    assert(ofp != NULL && "Invalid Input!");
+    if (ofp == NULL){
+        invalidInput();
+    }
     for (i = 0; i<k; i++){
         for (j=0; j<d-1; j++){
             fprintf(ofp,"%.4f,",cents[i][j]);
@@ -285,7 +305,7 @@ void validityCheck2(int k, int max_iter, int size){
 }
 
 int main(int argc, char *argv[]){
-    int i ,d, size, k, max_iter = 200;
+    int d, size, k, max_iter = 200;
     char *inputFileName = NULL;
     char *outputFileName = NULL;
     FILE *ifp=NULL;
@@ -307,7 +327,9 @@ int main(int argc, char *argv[]){
     }
     
     ifp = fopen(inputFileName, "r");
-    assert(ifp != NULL && "Invalid Input!");
+    if (ifp == NULL){
+        invalidInput();
+    }
     d = findDimension(ifp);
     size = findInputSize(ifp);
     validityCheck2(k, max_iter, size);
@@ -316,17 +338,13 @@ int main(int argc, char *argv[]){
     
     centroids = inizializeCentroids(k, d, datapointMatrix); /*this array holds K datapoints*/
     clusters = (LINK *)calloc(k, sizeof(LINK));
-    assert(clusters != NULL && "An Error Has Occurred");
+    if (clusters == NULL){
+        anErrorHasOccurred();
+    }
     restartClusters(clusters, k);
     kMeans(k, size, d, max_iter, centroids, clusters, datapointMatrix);
     writeToFile(centroids, k, d, outputFileName);
-    for (i = 0; i<size; k++){
-        free(datapointMatrix[i]);
-    }
     free(datapointMatrix);
-    for (i = 0; i<k; k++){
-        free(centroids[i]);
-    }
     free(centroids);
     free(clusters);
     return 0;
